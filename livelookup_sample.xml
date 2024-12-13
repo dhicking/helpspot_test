@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- You must have the root element livelookup and the version number -->
+<!-- Optionally you can specify which fields are used as columns in the live lookup screen. It's not recommended that you use more than 3 or 4. 
+		You also want to stay away from any large text fields as they will clutter the live lookup page. If you leave this empty HelpSpot will use it's default set of 
+		fields. The customer id field is always shown.-->
+<livelookup version="1.0" columns="first_name,last_name">
+        <customer>
+				<!-- customer_id is the only required element. It can be any number or string that is unique to the customer. 
+					If you don't have unique identifiers for your customers you can make one up by using a hash or their email 
+					or some other unique value -->        
+                <customer_id>12334</customer_id>
+                <!-- firstName, lastName, email, phone are all optional but if found will be placed in the appropriate fields in HelpSpot -->
+                <first_name>Bob</first_name>
+                <last_name>Jones</last_name>
+                <email>bjones@sampleinc.com</email>
+                <phone>845-555-4278</phone>
+				<!-- you may put any other elements you want in the customer element. These other elements will then be available 
+					to support staff. The element name itself will be used to describe the field with the first letter capitalized.
+					A few ideas include support contract status, account passwords and records, customer purchase history, customer assets, etc -->                
+                <organization>Sample Inc</organization>
+                <password>The Password</password>
+        </customer>
+
+        <customer>
+                <customer_id>56757</customer_id>
+                <first_name>Tina</first_name>
+                <last_name>Smith</last_name>
+                <email>tsmith@sampleinc.com</email>
+                <phone>845-555-8932</phone>
+                <organization>Sample Inc</organization>
+                <password>abcdefg</password>
+        </customer>
+
+        <customer>
+                <customer_id>95544</customer_id>
+                <first_name>Tim</first_name>
+                <last_name>Myers</last_name>
+                <email>tmyers@sampleinc.com</email>
+                <phone>845-555-9812</phone>
+                <organization>Sample Inc</organization>
+                <password>thyekbg</password>
+        </customer>
+</livelookup>
