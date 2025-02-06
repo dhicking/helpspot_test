@@ -1,7 +1,4 @@
 <?php
-
-
-
 // This sample file is used for a HelpSpot Live Lookup using a Google Sheet published as CSV.
 // Replace the placeholders below with your actual Google Sheet export URL details.
 // To get this URL:
