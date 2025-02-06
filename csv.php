@@ -23,7 +23,7 @@ function fetchCsvWithCurl($url) {
 }
 
 // Replace with your actual Google Sheet export URL.
-$csvUrl = 'https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/export?format=csv&id=YOUR_SPREADSHEET_ID&gid=YOUR_GID';
+$csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQQ_pLFbgdlUI-1SBX5Ve2WlWNg36vrPRPE-8wYnVSWrnVL46DWL5f8xdac5TqCXaL7AZD2bdwyNEi/pub?gid=0&single=true&output=csv';
 $csvContent = fetchCsvWithCurl($csvUrl);
 if ($csvContent === false) {
     http_response_code(500);
