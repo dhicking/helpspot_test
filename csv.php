@@ -1,59 +1,41 @@
 <?php
-// Start output buffering to capture any unwanted output.
 ob_start();
-
-// Suppress error display to prevent any stray output.
 error_reporting(0);
 ini_set('display_errors', '0');
 
-// Replace these placeholders with your actual Google Sheet export URL details.
-$csvUrl = 'https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/export?format=csv&id=YOUR_SPREADSHEET_ID&gid=YOUR_GID';
-
-// Set the proper XML header.
+// Set header as XML with UTF-8.
 header('Content-Type: text/xml; charset=UTF-8');
-
-// Clear any buffered output to ensure nothing precedes the XML declaration.
-ob_clean();
-
-// Output the XML declaration.
-echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 
 /**
  * Fetch CSV content using cURL.
- *
- * @param string $url The URL to fetch.
- * @return string The CSV content.
  */
 function fetchCsvWithCurl($url) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
+    $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        $error_msg = curl_error($ch);
+    $data = curl_exec($ch);
+    if(curl_errno($ch)) {
         curl_close($ch);
-        http_response_code(500);
-        exit("Error fetching CSV: " . $error_msg);
+        return false;
     }
     curl_close($ch);
-    return $result;
+    return $data;
 }
 
-// Fetch CSV content from the Google Sheet.
+// Replace with your actual Google Sheet export URL.
+$csvUrl = 'https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/export?format=csv&id=YOUR_SPREADSHEET_ID&gid=YOUR_GID';
 $csvContent = fetchCsvWithCurl($csvUrl);
-if (!$csvContent) {
+if ($csvContent === false) {
     http_response_code(500);
-    exit("Error: Empty CSV content.");
+    exit("Error fetching CSV data.");
 }
 
-// Remove a BOM if present.
+// Remove BOM if present.
 if (substr($csvContent, 0, 3) === "\xEF\xBB\xBF") {
     $csvContent = substr($csvContent, 3);
 }
 
-// Open a memory stream for the CSV content.
+// Write CSV content to a memory stream.
 $handle = fopen('php://memory', 'r+');
 if (!$handle) {
     http_response_code(500);
@@ -62,36 +44,39 @@ if (!$handle) {
 fwrite($handle, $csvContent);
 rewind($handle);
 
-// Process the CSV content to find matches.
+// Create a new DOMDocument.
+$doc = new DOMDocument('1.0', 'UTF-8');
+$doc->formatOutput = true;
+
+// Build the root element.
+$root = $doc->createElement('livelookup');
+$root->setAttribute('version', '1.0');
+$root->setAttribute('columns', 'customer_id,first_name,last_name');
+$doc->appendChild($root);
+
+// Process CSV rows.
 // Expected CSV columns: [0] customer ID, [1] first name, [2] last name, [3] email, [4] phone.
-$matches = array();
 while (($data = fgetcsv($handle, 1000, ",")) !== false) {
     if (count($data) < 5) {
         continue;
     }
-    if (!empty($_GET['customer_id']) && $data[0] == $_GET['customer_id']) {
-        $matches[] = $data;
-    } elseif (!empty($_GET['email']) && $data[3] == $_GET['email']) {
-        $matches[] = $data;
+    if (
+        (!empty($_GET['customer_id']) && $data[0] == $_GET['customer_id']) ||
+        (!empty($_GET['email']) && $data[3] == $_GET['email'])
+    ) {
+        $customer = $doc->createElement('customer');
+        $customer->appendChild($doc->createElement('customer_id', $data[0]));
+        $customer->appendChild($doc->createElement('first_name', $data[1]));
+        $customer->appendChild($doc->createElement('last_name', $data[2]));
+        $customer->appendChild($doc->createElement('email', $data[3]));
+        $customer->appendChild($doc->createElement('phone', $data[4]));
+        $root->appendChild($customer);
     }
 }
 fclose($handle);
 
-// Build XML output.
-echo '<livelookup version="1.0" columns="customer_id,first_name,last_name">';
-if (count($matches)) {
-    foreach ($matches as $person) {
-        echo '<customer>';
-        echo '<customer_id>' . htmlspecialchars($person[0], ENT_XML1, 'UTF-8') . '</customer_id>';
-        echo '<first_name>'  . htmlspecialchars($person[1], ENT_XML1, 'UTF-8') . '</first_name>';
-        echo '<last_name>'   . htmlspecialchars($person[2], ENT_XML1, 'UTF-8') . '</last_name>';
-        echo '<email>'       . htmlspecialchars($person[3], ENT_XML1, 'UTF-8') . '</email>';
-        echo '<phone>'       . htmlspecialchars($person[4], ENT_XML1, 'UTF-8') . '</phone>';
-        echo '</customer>';
-    }
-}
-echo '</livelookup>';
-
-// Flush the output buffer.
-ob_end_flush();
+// Clear any output buffering before sending XML.
+$output = $doc->saveXML();
+ob_end_clean();
+echo $output;
 ?>
